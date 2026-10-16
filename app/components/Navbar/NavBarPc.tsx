@@ -1,144 +1,129 @@
 "use client";
-import {
-  Avatar,
-  Dropdown,
-  DropdownDivider,
-  DropdownItem,
-} from "flowbite-react";
-import { useUserStore } from "#/store/auth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-
-const NavbarItems = [
-  {
-    title: "Домашняя",
-    icon: "mdi--home",
-    href: "/",
-    auth: false,
-  },
-  {
-    title: "Обзор",
-    icon: "mdi--compass",
-    href: "/discovery",
-    auth: false,
-  },
-  {
-    title: "Поиск",
-    icon: "mdi--search",
-    href: "/search",
-    auth: false,
-  },
-  {
-    title: "Закладки",
-    icon: "mdi--bookmark-multiple",
-    href: "/bookmarks",
-    auth: true,
-  },
-  {
-    title: "Избранное",
-    icon: "mdi--favorite",
-    href: "/favorites",
-    auth: true,
-  },
-  {
-    title: "Коллекции",
-    icon: "mdi--collections-bookmark",
-    href: "/collections",
-    auth: true,
-  },
-  {
-    title: "История",
-    icon: "mdi--history",
-    href: "/history",
-    auth: true,
-  },
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownDivider,
+  useThemeMode,
+} from "flowbite-react";
+import { useUserStore } from "#/store/auth";
+import { Brand } from "../Brand/Brand";
+const library = [
+  ["Закладки", "/bookmarks"],
+  ["Избранное", "/favorites"],
+  ["Коллекции", "/collections"],
+  ["История", "/history"],
 ];
-
-export const NavBarPc = (props: { setIsSettingModalOpen: any }) => {
-  const userStore = useUserStore();
+export const NavBarPc = ({ setIsSettingModalOpen }) => {
+  const user = useUserStore();
+  const path = usePathname();
   const router = useRouter();
-  const pathname = usePathname();
-
+  const { computedMode, setMode } = useThemeMode();
   return (
-    <>
-      <header className="sticky top-0 left-0 right-0 z-50 hidden w-full h-16 font-medium text-white bg-black rounded-b-lg lg:block backdrop-blur-md bg-opacity-90 transition-all duration-300">
-        <div className="container flex items-center justify-between h-full px-2 mx-auto">
-          <div className="flex items-center h-full gap-3">
-            {NavbarItems.map((item, index) => {
-              if (item.auth && !userStore.isAuth) return;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  href={item.href}
-                  key={`navbar-pc-${item.title}`}
-                  className={`flex items-center nav-link px-3 py-2 rounded-lg transition-all duration-300 hover:bg-white/10 ${
-                    isActive ? 'bg-blue-500/20 text-blue-300' : 'hover:text-blue-300'
-                  }`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <span className={`iconify ${item.icon} w-6 h-6 transition-transform duration-300 hover:scale-110`}></span>
-                  <span className="ml-1">{item.title}</span>
-                </Link>
-              );
-            })}
-          </div>
-          <Dropdown
-            arrowIcon={false}
-            inline
-            label={
-              <div className="flex items-center btn-primary px-3 py-2 rounded-lg hover:bg-white/10 transition-all duration-300">
-                <Avatar
-                  alt=""
-                  img={
-                    userStore.isAuth ?
-                      userStore.user.avatar
-                    : "https://s.anixmirai.com/avatars/no_avatar.jpg"
-                  }
-                  rounded
-                  size="xs"
-                  className="transition-transform duration-300 hover:scale-110"
-                />
-                <p className="ml-2 transition-colors duration-300 hover:text-blue-300">
-                  {userStore.isAuth ? userStore.user.login : "Аноним"}
-                </p>
-              </div>
+    <header className="ef-header">
+      <div className="ef-header-inner">
+        <Brand />
+        <nav className="ef-desktop-nav" aria-label="Основная навигация">
+          {[
+            ["Главная", "/"],
+            ["Открыть новое", "/discovery"],
+            ["Каталог", "/search"],
+          ].map(([title, href]) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={path === href ? "page" : undefined}
+            >
+              {title}
+            </Link>
+          ))}
+        </nav>
+        <div className="ef-header-actions">
+          <Link
+            href="/search"
+            className="ef-icon-button"
+            aria-label="Поиск аниме"
+          >
+            <span className="iconify mdi--magnify" />
+          </Link>
+          <button
+            type="button"
+            className="ef-icon-button"
+            onClick={() => setMode(computedMode === "dark" ? "light" : "dark")}
+            aria-label={
+              computedMode === "dark"
+                ? "Включить светлую тему"
+                : "Включить тёмную тему"
             }
           >
-            {userStore.isAuth ?
-              <DropdownItem
-                onClick={() => router.push(`/profile/${userStore.user.id}`)}
-                className="relative flex hover:bg-blue-500/10 transition-all duration-300"
-              >
-                <span className="w-4 h-4 iconify mdi--user transition-transform duration-300 hover:scale-110"></span>
-                <span className="ml-2">Профиль</span>
-              </DropdownItem>
-            : ""}
-            <DropdownItem
-              onClick={() => props.setIsSettingModalOpen(true)}
-              className="relative flex hover:bg-blue-500/10 transition-all duration-300"
+            <span
+              className={`iconify ${computedMode === "dark" ? "mdi--white-balance-sunny" : "mdi--moon-waning-crescent"}`}
+            />
+          </button>
+          {user.isAuth ? (
+            <Dropdown
+              inline
+              arrowIcon={false}
+              label={
+                <span className="ef-account-label">
+                  <span className="iconify mdi--account-circle" />
+                  {user.user.login}
+                </span>
+              }
             >
-              <span className="w-4 h-4 iconify mdi--settings transition-transform duration-300 hover:scale-110"></span>
-              <span className="ml-2">Настройки</span>
-            </DropdownItem>
-            {userStore.isAuth ?
               <DropdownItem
-                onClick={() => userStore.logout()}
-                className="relative flex hover:bg-red-500/10 transition-all duration-300"
+                onClick={() => router.push(`/profile/${user.user.id}`)}
               >
-                <span className="w-4 h-4 iconify mdi--logout transition-transform duration-300 hover:scale-110"></span>
-                <span className="ml-2">Выйти</span>
+                Мой профиль
               </DropdownItem>
-            : <DropdownItem
-                onClick={() => router.push(`/login?redirect=${pathname}`)}
-                className="relative flex hover:bg-green-500/10 transition-all duration-300"
+              {library.map(([title, href]) => (
+                <DropdownItem key={href} onClick={() => router.push(href)}>
+                  {title}
+                </DropdownItem>
+              ))}
+              <DropdownDivider />
+              <DropdownItem onClick={() => setIsSettingModalOpen(true)}>
+                Настройки
+              </DropdownItem>
+              <DropdownItem onClick={() => user.logout()}>Выйти</DropdownItem>
+            </Dropdown>
+          ) : (
+            <>
+              <Link href="/login" className="ef-login-link">
+                Войти
+              </Link>
+              <Link
+                href="/register"
+                className="ef-button ef-button-small ef-register-link"
               >
-                <span className="w-4 h-4 iconify mdi--login transition-transform duration-300 hover:scale-110"></span>
-                <span className="ml-2">Войти</span>
-              </DropdownItem>
-            }
-          </Dropdown>
+                Создать аккаунт <span aria-hidden="true">↗</span>
+              </Link>
+              <button
+                type="button"
+                className="ef-icon-button ef-guest-settings"
+                onClick={() => setIsSettingModalOpen(true)}
+                aria-label="Настройки"
+              >
+                <span className="iconify mdi--cog-outline" />
+              </button>
+            </>
+          )}
         </div>
-      </header>
-    </>
+      </div>
+      {user.isAuth && (
+        <nav className="ef-library-nav" aria-label="Моя библиотека">
+          {library.map(([title, href]) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={path.startsWith(href) ? "page" : undefined}
+            >
+              {title}
+            </Link>
+          ))}
+        </nav>
+      )}
+    </header>
   );
 };

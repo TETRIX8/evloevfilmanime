@@ -1,182 +1,174 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useUserStore } from "#/store/auth";
-import { setJWT, tryCatchAPI } from "#/api/utils";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useThemeMode } from "flowbite-react";
-import { toast } from "react-toastify";
+import { useUserStore } from "#/store/auth";
+import { setJWT, removeJWT, tryCatchAPI } from "#/api/utils";
 import { ENDPOINTS } from "#/api/config";
-
 export function LoginPage() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
-  const userStore = useUserStore();
+  const [visible, setVisible] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const user = useUserStore();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || null;
-  const theme = useThemeMode();
-  const [isSending, setIsSending] = useState(false);
-
+  const params = useSearchParams();
+  const target = params.get("redirect") || "/";
+  const redirect =
+    target.startsWith("/") && !target.startsWith("//") && !target.includes("\\")
+      ? target
+      : "/";
+  useEffect(() => {
+    if (user.isAuth) router.replace(redirect);
+  }, [user.isAuth, redirect, router]);
   async function submit(e) {
     e.preventDefault();
-    setIsSending(true);
-
-    const tid = toast.loading("Выполняем вход...", {
-      position: "bottom-center",
-      hideProgressBar: true,
-      closeOnClick: false,
-      pauseOnHover: false,
-      draggable: false,
-      theme: theme.mode == "light" ? "light" : "dark",
-    });
-
-    const { data, error } = await tryCatchAPI(
-      fetch(`${ENDPOINTS.user.auth}?login=${login}&password=${password}`, {
-        method: "POST",
-        headers: {
-          Sign: "9aa5c7af74e8cd70c86f7f9587bde23d",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      })
-    );
-
-    if (error) {
-      let message = `Ошибка получения пользователя, code: ${error.code}`
-      if (error.code == 2) {
-        message = "Такого пользователя не существует"
+    if (sending) return;
+    setSending(true);
+    setError("");
+    try {
+      // Preserve the upstream protocol; encode credentials so +, &, # and ? remain valid.
+      const query = new URLSearchParams({ login: login.trim(), password });
+      const { data, error: failure } = await tryCatchAPI(
+        fetch(`${ENDPOINTS.user.auth}?${query}`, {
+          method: "POST",
+          headers: {
+            Sign: "9aa5c7af74e8cd70c86f7f9587bde23d",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          signal: AbortSignal.timeout(15000),
+        }),
+      );
+      if (failure || !data?.profileToken?.token || !data?.profile) {
+        setError(
+          failure?.code === 2
+            ? "Пользователь не найден. Проверь логин или создай аккаунт в Anixart."
+            : failure?.code === 3
+              ? "Логин или пароль не подошли. Попробуй ещё раз."
+              : "Не удалось войти. Проверь соединение и попробуй снова.",
+        );
+        return;
       }
-      if (error.code == 3) {
-        message = "Неправильно указан логин и/или пароль"
-      }
-      toast.update(tid, {
-        render: message,
-        type: "error",
-        autoClose: 2500,
-        isLoading: false,
-        closeOnClick: true,
-        draggable: true,
-      });
-      setIsSending(false);
-      return;
+      if (remember) setJWT(data.profile.id, data.profileToken.token);
+      else removeJWT();
+      user.login(data.profile, data.profileToken.token);
+      router.replace(redirect);
+    } catch {
+      setError(
+        "Не удалось сохранить сессию. Проверь, разрешено ли сайту использовать хранилище браузера.",
+      );
+    } finally {
+      setSending(false);
     }
-
-    if (!data.profileToken) {
-      toast.update(tid, {
-        render: "Не удалось войти в аккаунт",
-        type: "error",
-        autoClose: 2500,
-        isLoading: false,
-        closeOnClick: true,
-        draggable: true,
-      });
-      setIsSending(false);
-      return;
-    }
-
-    userStore.login(data.profile, data.profileToken.token);
-    if (remember) {
-      setJWT(data.profile.id, data.profileToken.token);
-    }
-
-    toast.update(tid, {
-      render: "Вход успешен!",
-      type: "success",
-      autoClose: 2500,
-      isLoading: false,
-      closeOnClick: true,
-      draggable: true,
-    });
   }
-
-  useEffect(() => {
-    if (userStore.user) {
-      router.push(`${redirect || "/"}`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userStore.user]);
-
   return (
-    <section>
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-        <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-            <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-              Вход в аккаунт Anixart
-            </h1>
-            <form
-              className="space-y-4 md:space-y-6"
-              method="POST"
-              onSubmit={submit}
-            >
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Логин или эл. почта
-                </label>
-                <input
-                  type="text"
-                  name="email"
-                  id="email"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="name@company.com"
-                  value={login}
-                  onChange={(e) => setLogin(e.target.value)}
-                  required={true}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Пароль
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="••••••••"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required={true}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-start">
-                  <div className="flex items-center h-5">
-                    <input
-                      id="remember"
-                      aria-describedby="remember"
-                      type="checkbox"
-                      className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                      required={true}
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label
-                      htmlFor="remember"
-                      className="text-gray-500 dark:text-gray-300"
-                    >
-                      Запомнить вход
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-              >
-                Войти
-              </button>
-            </form>
-          </div>
+    <section className="ef-auth">
+      <div className="ef-auth-art">
+        <div className="ef-auth-art-copy">
+          <span className="ef-eyebrow">ТВОЯ СЛЕДУЮЩАЯ ИСТОРИЯ</span>
+          <h1>
+            Рад снова
+            <br />
+            тебя видеть.
+          </h1>
+          <p>
+            Любимые миры, сохранённые серии
+            <br />и истории, к которым хочется вернуться.
+          </p>
+          <span className="ef-art-caption">
+            Маленькая пауза. Большое приключение.
+          </span>
         </div>
+      </div>
+      <div className="ef-auth-panel">
+        <div className="ef-auth-heading">
+          <span className="ef-eyebrow">С ВОЗВРАЩЕНИЕМ</span>
+          <h2>Войти в свой мир</h2>
+          <p>Используй свой аккаунт Anixart</p>
+        </div>
+        <div className="ef-auth-tabs">
+          <span aria-current="page">Вход</span>
+          <Link href="/register">Создать аккаунт</Link>
+        </div>
+        <form onSubmit={submit} className="ef-form" aria-busy={sending}>
+          <label htmlFor="login">
+            Логин или электронная почта
+            <input
+              id="login"
+              name="username"
+              autoComplete="username"
+              placeholder="Твой логин или email"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              required
+              disabled={sending}
+            />
+          </label>
+          <label htmlFor="password">
+            Пароль
+            <span className="ef-password-field">
+              <input
+                id="password"
+                name="password"
+                autoComplete="current-password"
+                type={visible ? "text" : "password"}
+                placeholder="Введи пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={sending}
+              />
+              <button
+                type="button"
+                aria-label={visible ? "Скрыть пароль" : "Показать пароль"}
+                aria-pressed={visible}
+                onClick={() => setVisible(!visible)}
+              >
+                <span
+                  className={`iconify ${visible ? "mdi--eye-off-outline" : "mdi--eye-outline"}`}
+                />
+              </button>
+            </span>
+          </label>
+          <label className="ef-checkbox">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              disabled={sending}
+            />
+            Запомнить меня
+          </label>
+          {error && (
+            <div role="alert" className="ef-notice ef-notice-error">
+              {error}
+            </div>
+          )}
+          <button
+            className="ef-button ef-button-wide"
+            type="submit"
+            disabled={sending}
+          >
+            {sending ? (
+              <>
+                <span className="ef-mini-spinner" /> Входим…
+              </>
+            ) : (
+              <>
+                Войти <span aria-hidden="true">→</span>
+              </>
+            )}
+          </button>
+        </form>
+        <p className="ef-auth-note">
+          <span className="iconify mdi--shield-check-outline" /> Неофициальный
+          клиент. Вход обрабатывается API Anixart.
+        </p>
+        <Link className="ef-back-link" href="/">
+          ← Пока просто посмотрю каталог
+        </Link>
       </div>
     </section>
   );

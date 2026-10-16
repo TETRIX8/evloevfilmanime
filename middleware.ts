@@ -8,10 +8,10 @@ export const config = {
 
 export default async function middleware(
   request: Request,
-  context: NextFetchEvent
+  context: NextFetchEvent,
 ) {
   const url = new URL(request.url);
-  let path = url.pathname.match(/\/api\/proxy\/(.*)/)?.[1] + url.search;
+  const proxyPath = url.pathname.match(/\/api\/proxy\/(.*)/)?.[1] || "";
 
   let isApiV2 = false;
   if (
@@ -27,10 +27,12 @@ export default async function middleware(
     isApiV2 = true;
   }
 
+  const path = proxyPath + url.search;
+
   if (request.method == "GET") {
     const { data, error } = await fetchDataViaGet(
       `${API_URL}/${path}`,
-      isApiV2
+      isApiV2,
     );
     if (error) {
       return new Response(JSON.stringify(error), {
@@ -52,13 +54,16 @@ export default async function middleware(
     const ReqContentTypeHeader = request.headers.get("Content-Type") || "";
     const ReqSignHeader = request.headers.get("Sign") || null;
     let ResContentTypeHeader = "";
-    let body = null;
+    let body: any = null;
 
     if (ReqContentTypeHeader.split(";")[0] == "multipart/form-data") {
       ResContentTypeHeader = ReqContentTypeHeader;
       body = await request.arrayBuffer();
-    } else if (ReqContentTypeHeader == "application/x-www-form-urlencoded") {
+    } else if (
+      ReqContentTypeHeader.split(";")[0] == "application/x-www-form-urlencoded"
+    ) {
       ResContentTypeHeader = ReqContentTypeHeader;
+      body = await request.text();
     } else {
       ResContentTypeHeader = "application/json; charset=UTF-8";
       body = JSON.stringify(await request.json());
@@ -72,7 +77,7 @@ export default async function middleware(
       `${API_URL}/${path}`,
       body,
       isApiV2,
-      resHeaders
+      resHeaders,
     );
 
     if (error) {

@@ -1,0 +1,129 @@
+{
+  "base_commit": "f4fc763d658c97c983df89d020370cb7de9fd809",
+  "build": "npm run build: exit 0; Next.js compilation, TypeScript and lint completed",
+  "browser": {
+    "errors": [],
+    "checks": [
+      {
+        "carouselMoves": true
+      },
+      {
+        "showPassword": true
+      },
+      {
+        "credentialsEncoded": true
+      },
+      {
+        "sendingDisabled": true
+      },
+      {
+        "reducedMotion": true
+      },
+      {
+        "focusedElement": "A"
+      }
+    ],
+    "overflows": [
+      {
+        "name": "anix-home-desktop",
+        "screen": 1440,
+        "body": 1440
+      },
+      {
+        "name": "anix-home-dark",
+        "screen": 1440,
+        "body": 1440
+      },
+      {
+        "name": "anix-login-desktop-dark",
+        "screen": 1440,
+        "body": 1440
+      },
+      {
+        "name": "anix-login-desktop",
+        "screen": 1440,
+        "body": 1440
+      },
+      {
+        "name": "anix-login-error",
+        "screen": 1440,
+        "body": 1440
+      },
+      {
+        "name": "anix-register-desktop",
+        "screen": 1440,
+        "body": 1440
+      },
+      {
+        "name": "anix-register-mobile",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-login-mobile",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-home-mobile",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-home-mobile-dark",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-settings-mobile",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-catalogue-error-mobile",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-catalogue-empty-mobile",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-search-mobile",
+        "screen": 390,
+        "body": 390
+      },
+      {
+        "name": "anix-login-tablet",
+        "screen": 1024,
+        "body": 1024
+      }
+    ]
+  },
+  "authentication_mock_tests": {
+    "mockedSignInRequests": 2,
+    "externalRedirectBlocked": true,
+    "rememberOffDoesNotPersist": true,
+    "rememberOnPersists": true
+  },
+  "tested_text_contrast_ratios": {
+    "light_text_on_canvas": 14.24,
+    "light_secondary_on_surface": 5.71,
+    "white_on_primary": 7.36,
+    "dark_text_on_surface": 15.82,
+    "dark_secondary_on_canvas": 9.17,
+    "dark_button_text_on_primary": 8.58
+  },
+  "input_boundary_contrast_ratios": {
+    "light": 3.43,
+    "dark": 3.79
+  },
+  "limitations": [
+    "No real-account sign-in test",
+    "No in-site registration backend",
+    "No video playback verification",
+    "Not an exhaustive test of every existing screen",
+    "No GitHub push or deployment"
+  ]
+}

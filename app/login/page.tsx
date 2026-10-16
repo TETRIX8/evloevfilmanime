@@ -1,12 +1,13 @@
+import { Suspense } from "react";
 import { LoginPage } from "#/pages/Login";
-
 export const metadata = {
-  title: "Авторизация",
-  description: "Вход в аккаунт anixart",
-}
-
-export const dynamic = "force-static";
-
+  title: "Вход",
+  description: "Вход в аккаунт Anixart",
+};
 export default function Login() {
-  return <LoginPage />;
+  return (
+    <Suspense fallback={<p role="status">Готовим форму входа…</p>}>
+      <LoginPage />
+    </Suspense>
+  );
 }

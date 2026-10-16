@@ -1,74 +1,72 @@
 "use client";
-import { ReleaseLink } from "../ReleaseLink/ReleaseLinkUpdate";
+import { useRef } from "react";
 import Link from "next/link";
-
-import { Swiper, SwiperSlide } from 'swiper/react';
-import Styles from "./ReleaseCourusel.module.css";
-import "swiper/css";
-import "swiper/css/navigation";
-import { Navigation } from "swiper/modules";
-
-export const ReleaseCourusel = (props: {
+import { ReleaseLink } from "../ReleaseLink/ReleaseLinkUpdate";
+export const ReleaseCourusel = ({
+  sectionTitle,
+  showAllLink,
+  content,
+}: {
   sectionTitle: string;
   showAllLink?: string;
   content: any;
 }) => {
+  const track = useRef<HTMLDivElement>(null);
+  const move = (direction: number) =>
+    track.current?.scrollBy({
+      left: direction * track.current.clientWidth * 0.8,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
   return (
-    <section className={`${Styles.section} fade-in`}>
-      <div className="flex justify-between px-4 py-2 border-b-2 border-black dark:border-white dark-transition">
-        <h1 className="font-bold text-md sm:text-xl md:text-lg xl:text-xl text-fade-in">
-          {props.sectionTitle}
-        </h1>
-        {props.showAllLink && (
-          <Link href={props.showAllLink}>
-            <div className="flex items-center nav-link group">
-              <p className="hidden text-xl font-bold sm:block group-hover:text-blue-500 dark-transition">Показать все</p>
-              <span className="w-6 h-6 iconify mdi--arrow-right icon-rotate group-hover:text-blue-500 dark-transition"></span>
-            </div>
-          </Link>
-        )}
+    <section className="ef-release-section" aria-label={sectionTitle}>
+      <div className="ef-section-heading">
+        <h2>{sectionTitle}</h2>
+        <div>
+          {showAllLink && (
+            <Link href={showAllLink} className="ef-text-link">
+              Все <span aria-hidden="true">↗</span>
+            </Link>
+          )}
+          <div className="ef-carousel-controls">
+            <button
+              className="ef-icon-button"
+              onClick={() => move(-1)}
+              aria-label={`Прокрутить назад: ${sectionTitle}`}
+            >
+              ←
+            </button>
+            <button
+              className="ef-icon-button"
+              onClick={() => move(1)}
+              aria-label={`Прокрутить вперёд: ${sectionTitle}`}
+            >
+              →
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="my-4">
-        <Swiper
-          modules={[Navigation]}
-          spaceBetween={8}
-          slidesPerView={'auto'}
-          direction={'horizontal'}
-          rewind={true}
-          navigation={{
-            nextEl: ".swiper-button-next",
-            prevEl: ".swiper-button-prev"
-          }}
-          allowTouchMove={true}
-          className={Styles.swiper}
-        >
-          {props.content.map((release, index) => {
-            return (
-              <SwiperSlide
-                key={release.id}
-                className="h-full max-w-72 aspect-[12/16]"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="card-hover">
-                  <ReleaseLink {...release} />
-                </div>
-              </SwiperSlide>
-            );
-          })}
-          <div
-            className={`swiper-button-prev ${Styles["swiper-button"]} after:iconify after:material-symbols--chevron-left aspect-square bg-black bg-opacity-25 backdrop-blur rounded-full after:bg-white hover:bg-opacity-40 transition-all duration-300`}
-            style={
-              { "--swiper-navigation-size": "64px" } as React.CSSProperties
-            }
-        ></div>
-        <div
-            className={`swiper-button-next ${Styles["swiper-button"]} after:iconify after:material-symbols--chevron-right aspect-square bg-black bg-opacity-25 backdrop-blur rounded-full after:bg-white hover:bg-opacity-40 transition-all duration-300`}
-            style={
-              { "--swiper-navigation-size": "64px" } as React.CSSProperties
-            }
-        ></div>
-      </Swiper>
-    </div>
-  </section>
-);
+      <div
+        className="ef-release-track"
+        ref={track}
+        tabIndex={0}
+        aria-label={`Релизы: ${sectionTitle}`}
+      >
+        {(content || []).map((release) => (
+          <div className="ef-release-slide" key={release.id}>
+            <ReleaseLink
+              {...release}
+              chipsSettings={{
+                enabled: true,
+                categoryHidden: true,
+                statusHidden: true,
+                ...release.chipsSettings,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 };

@@ -17,7 +17,7 @@ type Failure<E> = {
 type Result<T, E = Error> = Success<T> | Failure<E>;
 
 export async function tryCatch<T, E = Error>(
-  promise: Promise<T>
+  promise: Promise<T>,
 ): Promise<Result<T, E>> {
   try {
     const data = await promise;
@@ -28,7 +28,7 @@ export async function tryCatch<T, E = Error>(
 }
 
 export async function tryCatchPlayer<T, E = Error>(
-  promise: Promise<any>
+  promise: Promise<any>,
 ): Promise<Result<any, any>> {
   try {
     const res: Awaited<Response> = await promise;
@@ -68,7 +68,7 @@ export async function tryCatchPlayer<T, E = Error>(
 }
 
 export async function tryCatchAPI<T, E = Error>(
-  promise: Promise<any>
+  promise: Promise<any>,
 ): Promise<Result<any, any>> {
   try {
     const res: Awaited<Response> = await promise;
@@ -123,16 +123,19 @@ export const useSWRfetcher = async (url: string) => {
 export const fetchDataViaGet = async (
   url: string,
   API_V2: string | boolean = false,
-  addHeaders?: Record<string, any>
+  addHeaders?: Record<string, any>,
 ) => {
-  if (API_V2) {
-    HEADERS["API-Version"] = "v2";
-  }
+  const headers = {
+    ...HEADERS,
+    ...(API_V2 ? { "API-Version": "v2" } : {}),
+    ...addHeaders,
+  };
 
   const { data, error } = await tryCatchAPI(
     fetch(url, {
-      headers: { ...HEADERS, ...addHeaders },
-    })
+      headers,
+      signal: AbortSignal.timeout(15000),
+    }),
   );
 
   return { data, error };
@@ -142,18 +145,21 @@ export const fetchDataViaPost = async (
   url: string,
   body: string,
   API_V2: string | boolean = false,
-  addHeaders?: Record<string, any>
+  addHeaders?: Record<string, any>,
 ) => {
-  if (API_V2) {
-    HEADERS["API-Version"] = "v2";
-  }
+  const headers = {
+    ...HEADERS,
+    ...(API_V2 ? { "API-Version": "v2" } : {}),
+    ...addHeaders,
+  };
 
   const { data, error } = await tryCatchAPI(
     fetch(url, {
       method: "POST",
       body: body,
-      headers: { ...HEADERS, ...addHeaders },
-    })
+      headers,
+      signal: AbortSignal.timeout(15000),
+    }),
   );
 
   return { data, error };
@@ -164,8 +170,12 @@ export function setJWT(user_id: number | string, jwt: string) {
   localStorage.setItem("JWT", JSON.stringify(data));
 }
 export function getJWT() {
-  const data = localStorage.getItem("JWT");
-  return JSON.parse(data);
+  try {
+    const data = JSON.parse(localStorage.getItem("JWT") || "null");
+    return data && data.user_id && typeof data.jwt === "string" ? data : null;
+  } catch {
+    return null;
+  }
 }
 export function removeJWT() {
   localStorage.removeItem("JWT");
@@ -175,7 +185,7 @@ export function numberDeclension(
   number: number,
   one: string,
   two: string,
-  five: string
+  five: string,
 ) {
   if (number > 10 && [11, 12, 13, 14].includes(number % 100)) return five;
   let last_num = number % 10;
@@ -201,7 +211,7 @@ const months = [
 
 export function unixToDate(
   unix: number,
-  type: "full" | "dayMonth" | "dayMonthYear"
+  type: "full" | "dayMonth" | "dayMonthYear",
 ) {
   const date = new Date(unix * 1000);
   if (type === "full")
@@ -270,13 +280,13 @@ export function minutesToTime(min: number) {
   const dayDisplay =
     days > 0 ? `${days} ${numberDeclension(days, "день", "дня", "дней")}` : "";
   const hourDisplay =
-    hours > 0 ?
-      `${hours} ${numberDeclension(hours, "час", "часа", "часов")}`
-    : "";
+    hours > 0
+      ? `${hours} ${numberDeclension(hours, "час", "часа", "часов")}`
+      : "";
   const minuteDisplay =
-    minutes > 0 ?
-      `${minutes} ${numberDeclension(minutes, "минута", "минуты", "минут")}`
-    : "";
+    minutes > 0
+      ? `${minutes} ${numberDeclension(minutes, "минута", "минуты", "минут")}`
+      : "";
 
   if (days > 0 && hours > 0 && minutes > 0)
     return `${dayDisplay}, ${hourDisplay}, ${minuteDisplay}`;
@@ -728,7 +738,7 @@ export async function FetchFilter(
     sort,
   }: Filter,
   page: number,
-  token: null | string
+  token: null | string,
 ) {
   let url: string;
   url = `${ENDPOINTS.filter}/${page}`;
@@ -757,7 +767,7 @@ export async function FetchFilter(
       status_id,
       age_ratings,
       sort,
-    })
+    }),
   );
 
   return [data, error];
@@ -783,7 +793,7 @@ export const SortList = {
 export function b64toBlob(
   b64Data: string,
   contentType: string,
-  sliceSize?: number
+  sliceSize?: number,
 ) {
   contentType = contentType || "";
   sliceSize = sliceSize || 512;

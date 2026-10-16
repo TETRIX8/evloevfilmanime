@@ -12,8 +12,8 @@ export const metadata = {
     telephone: false,
   },
   title: {
-    template: "AniX | %s",
-    default: "AniX | Домашняя",
+    template: "Evloev Film | %s",
+    default: "Evloev Film | Твой мир аниме",
   },
   description: "Неофициальное приложение для anixart-app.com",
 
@@ -33,7 +33,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ru" suppressHydrationWarning>
       <head>
         <ThemeInit />
         <ThemeModeScript />
